@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Hall of PostgreSQL Horrors</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&family=Rubik:wght@300;400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rubik', sans-serif;
+            background: linear-gradient(135deg, #2c1810 0%, #1a0b05 50%, #0f0404 100%);
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Spooky background effects */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 0, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 140, 0, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 3rem;
+            border-bottom: 2px solid rgba(255, 107, 107, 0.3);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .title-section {
+            flex: 1;
+        }
+
+        .main-title {
+            font-family: 'Nosifer', cursive;
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: #ff6b6b;
+            text-shadow: 
+                0 0 10px #ff0000,
+                0 0 20px #ff0000,
+                2px 2px 0px #000;
+            margin-bottom: 0.5rem;
+            animation: flicker 3s infinite alternate;
+        }
+
+        .subtitle {
+            font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+            color: #ffaa00;
+            text-shadow: 0 0 10px #ffaa00;
+        }
+
+        .episode-number {
+            font-family: 'Creepster', cursive;
+            font-size: clamp(3rem, 6vw, 4.5rem);
+            color: #8b008b;
+            text-shadow: 0 0 20px #8b008b;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 2rem;
+            padding: 2rem 3rem;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .horror-section {
+            background: linear-gradient(145deg, rgba(139, 0, 0, 0.2), rgba(0, 0, 0, 0.4));
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .horror-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: clamp(1.1rem, 2vw, 1.4rem);
+            color: #ff6b6b;
+            font-weight: 700;
+        }
+
+        .curse-emoji {
+            font-size: 1.5rem;
+            animation: bounce 2s infinite;
+        }
+
+        .pr-link {
+            color: #00bfff;
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 1px dashed #00bfff;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .pr-link:hover {
+            color: #87ceeb;
+            text-shadow: 0 0 10px #00bfff;
+            border-bottom-style: solid;
+        }
+
+        .problem-section {
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.3), rgba(75, 0, 0, 0.2));
+            border-left: 4px solid #ff4444;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            flex: 1;
+        }
+
+        .solution-section {
+            background: linear-gradient(135deg, rgba(75, 0, 130, 0.3), rgba(50, 0, 75, 0.2));
+            border-left: 4px solid #8a2be2;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            flex: 1;
+        }
+
+        .problem-title {
+            color: #ff4444;
+            font-weight: 700;
+            font-size: clamp(1rem, 1.8vw, 1.3rem);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .solution-title {
+            color: #8a2be2;
+            font-weight: 700;
+            font-size: clamp(1rem, 1.8vw, 1.3rem);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-block {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(0.8rem, 1.4vw, 1rem);
+            line-height: 1.4;
+            color: #f8f8f2;
+            position: relative;
+            overflow-x: auto;
+            flex: 1;
+        }
+
+        .code-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b6b, #8a2be2, #00bfff);
+        }
+
+        .sql-keyword {
+            color: #66d9ef;
+            font-weight: bold;
+        }
+
+        .template-var {
+            color: #f92672;
+            font-weight: bold;
+        }
+
+        .result-section {
+            background: linear-gradient(135deg, rgba(0, 100, 0, 0.3), rgba(0, 50, 0, 0.2));
+            border: 2px solid #32cd32;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .result-text {
+            font-size: clamp(1.1rem, 2vw, 1.4rem);
+            font-weight: 700;
+            color: #32cd32;
+            text-shadow: 0 0 10px #32cd32;
+        }
+
+        .sparkles {
+            font-size: 1.2rem;
+            animation: sparkle 1.5s infinite alternate;
+        }
+
+        .horror-stats {
+            display: flex;
+            justify-content: space-around;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #666;
+            border-radius: 8px;
+            padding: 0.8rem;
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            font-weight: bold;
+            color: #ff6b6b;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: clamp(0.7rem, 1.2vw, 0.85rem);
+            color: #ccc;
+            text-transform: uppercase;
+        }
+
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .floating-ghost {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0.08;
+            animation: ghostFloat 8s infinite ease-in-out;
+        }
+
+        .ghost1 { top: 15%; left: 10%; animation-delay: 0s; }
+        .ghost2 { top: 25%; right: 15%; animation-delay: 2s; }
+        .ghost3 { bottom: 25%; left: 20%; animation-delay: 4s; }
+        .ghost4 { bottom: 15%; right: 10%; animation-delay: 6s; }
+
+        /* Navigation */
+        .navigation {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 1000;
+        }
+
+        .nav-button {
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.8), rgba(75, 0, 0, 0.6));
+            border: 2px solid #ff6b6b;
+            color: #fff;
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Rubik', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-button:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.8), rgba(139, 0, 0, 0.6));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .page-indicator {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.4rem;
+            z-index: 1000;
+        }
+
+        .page-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .page-dot.active {
+            background: #ff6b6b;
+            box-shadow: 0 0 10px #ff6b6b;
+        }
+
+        /* Page 2 specific styles */
+        .single-column {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .horror-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .content-line {
+            font-size: clamp(1.2rem, 2.2vw, 1.5rem);
+            margin: 1.5rem 0;
+            line-height: 1.6;
+            text-align: center;
+            width: 100%;
+        }
+
+        .pr-line {
+            color: #00bfff;
+            margin: 2rem 0;
+        }
+
+        .problem-line {
+            color: #ff9999;
+            margin: 2rem 0;
+        }
+
+        .solution-line {
+            color: #cc99ff;
+            margin: 2rem 0;
+        }
+
+        .result-line {
+            color: #32cd32;
+            font-weight: 700;
+            font-size: clamp(1.3rem, 2.8vw, 1.8rem);
+            margin: 3rem 0 2rem 0;
+            text-shadow: 0 0 10px #32cd32;
+        }
+
+        @keyframes flicker {
+            0%, 100% { text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; }
+            50% { text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000; }
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+            60% { transform: translateY(-4px); }
+        }
+
+        @keyframes sparkle {
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1.2) rotate(180deg); }
+        }
+
+        @keyframes ghostFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-15px) rotate(3deg); }
+            50% { transform: translateY(-8px) rotate(-2deg); }
+            75% { transform: translateY(-20px) rotate(2deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .left-panel, .right-panel {
+                flex: none;
+            }
+            
+            .horror-section {
+                flex: none;
+                height: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem 1.5rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .main-content {
+                padding: 1rem 1.5rem;
+            }
+            
+            .horror-section {
+                padding: 1rem;
+            }
+
+            .navigation {
+                bottom: 0.5rem;
+                right: 0.5rem;
+                flex-direction: column;
+            }
+
+            .nav-button {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-elements">
+        <div class="floating-ghost ghost1">👻</div>
+        <div class="floating-ghost ghost2">🦇</div>
+        <div class="floating-ghost ghost3">💀</div>
+        <div class="floating-ghost ghost4">🕷️</div>
+    </div>
+
+    <div class="presentation-container">
+        <!-- Page 1: The Aurora Query Planner Curse -->
+        <div class="page active" id="page1">
+            <div class="header">
+                <div class="title-section">
+                    <h1 class="main-title">The Hall of PostgreSQL Horrors</h1>
+                    <p class="subtitle">Where Query Planners Go to Die</p>
+                </div>
+                <div class="episode-number">(1)</div>
+            </div>
+
+            <div class="main-content">
+                <div class="left-panel">
+                    <div class="horror-section">
+                        <div class="section-header">
+                            <span class="curse-emoji">🔥</span>
+                            <h2 class="section-title">The Aurora Query Planner Curse</h2>
+                        </div>
+                        
+                        <p style="margin-bottom: 1rem;">
+                            <strong>PR:</strong> <a href="https://github.com/visual-layer/vl-product/pull/2904" class="pr-link" target="_blank">visual-layer/vl-product/pull/2904</a>
+                        </p>
+
+                        <div class="problem-section">
+                            <div class="problem-title">
+                                💀 The Problem: Aurora chose TERRIBLE plans
+                            </div>
+                            <div class="code-block">
+<span class="sql-keyword">AND</span> flat_similarity_clusters.duplicate_threshold 
+<span class="sql-keyword">IS NOT DISTINCT FROM</span> <span class="template-var">:duplicate_threshold</span>
+                            </div>
+                            <p style="color: #ff9999; font-size: 1rem; margin-top: 0.5rem;">
+                                Bind variables caused 10+ second execution times! 😱
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="horror-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">1</span>
+                            <span class="stat-label">Soul Lost</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div class="horror-section">
+                        <div class="solution-section">
+                            <div class="solution-title">
+                                🧙‍♂️ Dark Magic Solution: Template Injection
+                            </div>
+                            <div class="code-block">
+<span class="template-var">{% if duplicate_threshold %}</span>
+    <span class="sql-keyword">AND</span> flat_similarity_clusters.duplicate_threshold 
+    <span class="sql-keyword">IS NOT DISTINCT FROM</span> <span class="template-var">{{ duplicate_threshold }}</span>
+<span class="template-var">{% else %}</span>
+    <span class="sql-keyword">AND</span> flat_similarity_clusters.duplicate_threshold 
+    <span class="sql-keyword">IS NOT DISTINCT FROM</span> <span class="sql-keyword">NULL</span>
+<span class="template-var">{% endif %}</span>
+                            </div>
+                            <p style="color: #cc99ff; font-size: 1rem; margin-top: 0.5rem;">
+                                Jinja2 template injection tricked Aurora into optimal plans! 🎭
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="result-section">
+                        <div class="result-text">
+                            Result: 10-second queries → 1 second <span class="sparkles">✨</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 2: The Materialized CTE Betrayal -->
+        <div class="page" id="page2">
+            <div class="header">
+                <div class="title-section">
+                    <h1 class="main-title">The Hall of PostgreSQL Horrors</h1>
+                    <p class="subtitle">Where Query Planners Go to Die</p>
+                </div>
+                <div class="episode-number">(2)</div>
+            </div>
+
+            <div class="main-content single-column">
+                <div class="horror-content">
+                    <div class="section-header" style="justify-content: center; margin-bottom: 2rem;">
+                        <span class="curse-emoji">🧙‍♂️</span>
+                        <h2 class="section-title">The Materialized CTE Betrayal</h2>
+                    </div>
+
+                    <div class="content-line pr-line">
+                        <strong>PR:</strong> <a href="https://github.com/visual-layer/vl-product/pull/2977" class="pr-link" target="_blank">https://github.com/visual-layer/vl-product/pull/2977</a>
+                    </div>
+
+                    <div class="content-line problem-line">
+                        <strong>-- Problem:</strong> PostgreSQL forced materialization killed vector queries
+                    </div>
+
+                    <div class="content-line solution-line">
+                        <strong>-- The Forbidden Spell:</strong> Disable materialization entirely
+                    </div>
+
+                    <div class="result-line">
+                        <strong>Result:</strong> Image similarity search went from 7s → 0.3s <span class="sparkles">✨</span>
+                    </div>
+
+                    <div class="horror-stats" style="margin-top: 3rem; max-width: 600px;">
+                        <div class="stat-item">
+                            <span class="stat-value">2</span>
+                            <span class="stat-label">Souls Lost</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 3: The Join Condition Revelation -->
+        <div class="page" id="page3">
+            <div class="header">
+                <div class="title-section">
+                    <h1 class="main-title">The Hall of PostgreSQL Horrors</h1>
+                    <p class="subtitle">Where Query Planners Go to Die</p>
+                </div>
+                <div class="episode-number">(3)</div>
+            </div>
+
+            <div class="main-content">
+                <div class="left-panel">
+                    <div class="horror-section">
+                        <div class="section-header">
+                            <span class="curse-emoji">🔍</span>
+                            <h2 class="section-title">The Join Condition Revelation</h2>
+                        </div>
+                        
+                        <p style="margin-bottom: 1rem;">
+                            <strong>PR:</strong> <a href="https://github.com/visual-layer/vl-product/pull/2878" class="pr-link" target="_blank">visual-layer/vl-product/pull/2878</a>
+                        </p>
+
+                        <div class="problem-section">
+                            <div class="problem-title">
+                                💀 Before: PostgreSQL couldn't optimize this
+                            </div>
+                            <div class="code-block">
+<span class="sql-keyword">FROM</span> query_vector_embedding qve
+<span class="sql-keyword">JOIN</span> image_vector iv <span class="sql-keyword">ON</span> qve.media_id = iv.media_id
+                            </div>
+                            <p style="color: #ff9999; font-size: 1rem; margin-top: 0.5rem;">
+                                Query planner chose inefficient join strategies! 😱
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="horror-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">3</span>
+                            <span class="stat-label">Souls Lost</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div class="horror-section">
+                        <div class="solution-section">
+                            <div class="solution-title">
+                                🧙‍♂️ After: Give the planner a hint
+                            </div>
+                            <div class="code-block">
+<span class="sql-keyword">FROM</span> query_vector_embedding qve
+<span class="sql-keyword">JOIN</span> image_vector iv <span class="sql-keyword">ON</span> qve.media_id = iv.media_id
+                      <span class="sql-keyword">AND</span> qve.dataset_id = iv.dataset_id
+                            </div>
+                            <p style="color: #cc99ff; font-size: 1rem; margin-top: 0.5rem;">
+                                Additional join condition helped the planner choose optimal strategy! 🎯
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="result-section">
+                        <div class="result-text">
+                            Result: Query planner finally chose efficient plans <span class="sparkles">✨</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 4: The Embedding Config Trap -->
+        <div class="page" id="page4">
+            <div class="header">
+                <div class="title-section">
+                    <h1 class="main-title">The Hall of PostgreSQL Horrors</h1>
+                    <p class="subtitle">Where Query Planners Go to Die</p>
+                </div>
+                <div class="episode-number">(4)</div>
+            </div>
+
+            <div class="main-content">
+                <div class="left-panel">
+                    <div class="horror-section">
+                        <div class="section-header">
+                            <span class="curse-emoji">⚡</span>
+                            <h2 class="section-title">The Embedding Config Trap</h2>
+                        </div>
+                        
+                        <p style="margin-bottom: 1rem;">
+                            <strong>PR:</strong> <a href="https://github.com/visual-layer/vl-product/pull/3395" class="pr-link" target="_blank">visual-layer/vl-product/pull/3395</a>
+                        </p>
+
+                        <div class="problem-section">
+                            <div class="problem-title">
+                                💀 The Problem: Expensive function called on every request
+                            </div>
+                            <div class="code-block">
+get_text_vector_embedding_types()  <span class="sql-comment">-- 17 seconds of doom</span>
+                            </div>
+                            <p style="color: #ff9999; font-size: 1rem; margin-top: 0.5rem;">
+                                Function executed on every single request! 😱
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="horror-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">4</span>
+                            <span class="stat-label">Souls Lost</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div class="horror-section">
+                        <div class="solution-section">
+                            <div class="solution-title">
+                                🧙‍♂️ The Solution: Cache in dataset model
+                            </div>
+                            <div class="code-block">
+<span class="sql-keyword">if</span> dataset.embedding_config:
+    <span class="sql-keyword">return</span> dataset.embedding_config  <span class="sql-comment"># Instant lookup</span>
+<span class="sql-keyword">else</span>:
+    <span class="sql-keyword">return</span> get_text_vector_embedding_types()  <span class="sql-comment"># Fallback</span>
+                            </div>
+                            <p style="color: #cc99ff; font-size: 1rem; margin-top: 0.5rem;">
+                                Smart caching eliminated the performance assassin! 🎯
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="result-section">
+                        <div class="result-text">
+                            Result: Eliminated the 17-second assassin <span class="sparkles">✨</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 5: The Final Summary -->
+        <div class="page" id="page5">
+            <div class="header">
+                <div class="title-section">
+                    <h1 class="main-title">The Hall of PostgreSQL Horrors</h1>
+                    <p class="subtitle">Where Query Planners Go to Die</p>
+                </div>
+                <div class="episode-number">(5)</div>
+            </div>
+
+            <div class="main-content single-column">
+                <div class="horror-content">
+                    <div class="section-header" style="justify-content: center; margin-bottom: 3rem;">
+                        <span class="curse-emoji">🧙‍♂️</span>
+                        <h2 class="section-title">The Final Reckoning</h2>
+                    </div>
+
+                    <div class="content-line" style="font-size: clamp(1.4rem, 3vw, 2rem); margin: 2rem 0;">
+                        <strong>😈 We've wrestled with roughly 30 query gremlins behind the scenes...</strong>
+                    </div>
+
+                    <div class="content-line" style="font-size: clamp(1.2rem, 2.5vw, 1.8rem); margin: 2rem 0;">
+                        <strong>🤐 But I'll spare you the gruesome SQL war stories—no more nightmares today!</strong>
+                    </div>
+
+                    <div class="horror-stats" style="margin-top: 4rem; max-width: 600px;">
+                        <div class="stat-item">
+                            <span class="stat-value">30+</span>
+                            <span class="stat-label">Gremlins Vanquished</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">∞</span>
+                            <span class="stat-label">Souls Saved</span>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 3rem; font-size: clamp(1rem, 2vw, 1.4rem); opacity: 0.8;">
+                        <p>🎃 The horrors are behind us... for now 🎃</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="navigation">
+        <button class="nav-button" id="prevBtn" onclick="changePage(-1)">← Previous</button>
+        <button class="nav-button" id="nextBtn" onclick="changePage(1)">Next →</button>
+    </div>
+
+    <!-- Page indicators -->
+    <div class="page-indicator">
+        <div class="page-dot active" onclick="goToPage(1)"></div>
+        <div class="page-dot" onclick="goToPage(2)"></div>
+        <div class="page-dot" onclick="goToPage(3)"></div>
+        <div class="page-dot" onclick="goToPage(4)"></div>
+        <div class="page-dot" onclick="goToPage(5)"></div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const totalPages = 5;
+
+        function showPage(pageNum) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show current page
+            document.getElementById(`page${pageNum}`).classList.add('active');
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = pageNum === 1;
+            document.getElementById('nextBtn').disabled = pageNum === totalPages;
+            
+            // Update page indicators
+            document.querySelectorAll('.page-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index + 1 === pageNum);
+            });
+        }
+
+        function changePage(direction) {
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                showPage(currentPage);
+            }
+        }
+
+        function goToPage(pageNum) {
+            if (pageNum >= 1 && pageNum <= totalPages) {
+                currentPage = pageNum;
+                showPage(currentPage);
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                changePage(-1);
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                changePage(1);
+            }
+        });
+
+        // Add interactive spookiness
+        document.addEventListener('DOMContentLoaded', function() {
+            // Random flicker effect for the title
+            const titles = document.querySelectorAll('.main-title');
+            setInterval(() => {
+                if (Math.random() < 0.1) {
+                    titles.forEach(title => {
+                        title.style.opacity = '0.8';
+                        setTimeout(() => {
+                            title.style.opacity = '1';
+                        }, 100);
+                    });
+                }
+            }, 2000);
+
+            // Add hover effects to horror sections
+            const horrorSections = document.querySelectorAll('.horror-section');
+            horrorSections.forEach(section => {
+                section.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px) scale(1.01)';
+                    this.style.boxShadow = '0 12px 30px rgba(255, 107, 107, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                });
+                
+                section.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                    this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                });
+            });
+
+            // Initialize page
+            showPage(1);
+        });
+    </script>
+</body>
+</html>
